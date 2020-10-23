@@ -49,7 +49,7 @@ const createLockService = ({ db }) => ({ prefix }) => {
       }
 
       const prefixedKey = getPrefixedKey(key);
-      const lock = await lockQueries.delete({ key: prefixedKey, uid });
+      const [lock] = await lockQueries.delete({ key: prefixedKey, uid });
       return { lock: fromDBObject(lock, prefix) };
     },
 

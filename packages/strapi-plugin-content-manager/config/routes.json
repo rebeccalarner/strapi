@@ -188,6 +188,30 @@
           ["plugins::content-manager.hasPermissions", ["plugins::content-manager.explorer.publish"]]
         ]
       }
+    },
+    {
+      "method": "POST",
+      "path": "/collection-type/:model/:id/actions/lock",
+      "handler": "EditingLock.lock",
+      "config": {
+        "policies": [
+          "routing",
+          "admin::isAuthenticatedAdmin",
+          ["plugins::content-manager.hasPermissions", ["plugins::content-manager.explorer.update"]]
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/single-type/:model/actions/lock",
+      "handler": "EditingLock.lock",
+      "config": {
+        "policies": [
+          "routing",
+          "admin::isAuthenticatedAdmin",
+          ["plugins::content-manager.hasPermissions", ["plugins::content-manager.explorer.update"]]
+        ]
+      }
     }
   ]
 }
