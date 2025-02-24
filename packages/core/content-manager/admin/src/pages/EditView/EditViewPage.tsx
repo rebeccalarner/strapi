@@ -26,8 +26,6 @@ import { createYupSchema } from '../../utils/validation';
 import { FormLayout } from './components/FormLayout';
 import { Header } from './components/Header';
 import { Panels } from './components/Panels';
-import { transformDocument } from './utils/data';
-import { createDefaultForm } from './utils/forms';
 
 /* -------------------------------------------------------------------------------------------------
  * EditViewPage
@@ -56,6 +54,8 @@ const EditViewPage = () => {
     id,
     model,
     hasError,
+    getTitle,
+    getInitialFormValues,
   } = useDoc();
 
   const hasDraftAndPublished = schema?.options?.draftAndPublish ?? false;
@@ -98,38 +98,13 @@ const EditViewPage = () => {
 
   const isLoading = isLoadingActionsRBAC || isLoadingDocument || isLoadingLayout || isLazyLoading;
 
-  /**
-   * Here we prepare the form for editing, we need to:
-   * - remove prohibited fields from the document (passwords | ADD YOURS WHEN THERES A NEW ONE)
-   * - swap out count objects on relations for empty arrays
-   * - set __temp_key__ on array objects for drag & drop
-   *
-   * We also prepare the form for new documents, so we need to:
-   * - set default values on fields
-   */
-  const initialValues = React.useMemo(() => {
-    if ((!document && !isCreatingDocument && !isSingleType) || !schema) {
-      return undefined;
-    }
-
-    /**
-     * Check that we have an ID so we know the
-     * document has been created in some way.
-     */
-    const form = document?.id ? document : createDefaultForm(schema, components);
-
-    return transformDocument(schema, components)(form);
-  }, [document, isCreatingDocument, isSingleType, schema, components]);
-
-  if (hasError) {
-    return <Page.Error />;
-  }
+  const initialValues = getInitialFormValues(isCreatingDocument);
 
   if (isLoading && !document?.documentId) {
     return <Page.Loading />;
   }
 
-  if (!initialValues) {
+  if (!initialValues || hasError) {
     return <Page.Error />;
   }
 
@@ -139,17 +114,18 @@ const EditViewPage = () => {
     }
   };
 
-  /**
-   * We look to see what the mainField is from the configuration,
-   * if it's an id we don't use it because it's a uuid format and
-   * not very user friendly. Instead in that case, we simply write "Untitled".
-   */
-  const documentTitle =
-    mainField !== 'id' && document?.[mainField] ? document[mainField] : 'Untitled';
+  const validateSync = (values: Record<string, unknown>, options: Record<string, string>) => {
+    const yupSchema = createYupSchema(schema?.attributes, components, {
+      status,
+      ...options,
+    });
+
+    return yupSchema.validateSync(values, { abortEarly: false });
+  };
 
   return (
     <Main paddingLeft={10} paddingRight={10}>
-      <Page.Title>{`${documentTitle}`}</Page.Title>
+      <Page.Title>{getTitle(mainField)}</Page.Title>
       <Form
         disabled={hasDraftAndPublished && status === 'published'}
         initialValues={initialValues}
@@ -162,13 +138,14 @@ const EditViewPage = () => {
 
           return yupSchema.validate(values, { abortEarly: false });
         }}
+        initialErrors={location?.state?.forceValidation ? validateSync(initialValues, {}) : {}}
       >
         {({ resetForm }) => (
           <>
             <Header
               isCreating={isCreatingDocument}
               status={hasDraftAndPublished ? getDocumentStatus(document, meta) : undefined}
-              title={documentTitle}
+              title={getTitle(mainField)}
             />
             <Tabs.Root variant="simple" value={status} onValueChange={handleTabChange}>
               <Tabs.List
@@ -228,7 +205,7 @@ const StatusTab = styled(Tabs.Trigger)`
 
 /**
  * @internal
- * @description Returns the status of the document where it's latest state takes priority,
+ * @description Returns the status of the document where its latest state takes priority,
  * this typically will be "published" unless a user has edited their draft in which we should
  * display "modified".
  */
@@ -294,4 +271,4 @@ const ProtectedEditViewPage = () => {
   );
 };
 
-export { EditViewPage, ProtectedEditViewPage };
+export { EditViewPage, ProtectedEditViewPage, getDocumentStatus };
