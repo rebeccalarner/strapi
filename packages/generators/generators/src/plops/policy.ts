@@ -1,4 +1,4 @@
-import { NodePlopAPI } from 'plop';
+import type { NodePlopAPI } from 'plop';
 import tsUtils from '@strapi/typescript-utils';
 
 import getDestinationPrompts from './prompts/get-destination-prompts';
@@ -23,8 +23,8 @@ export default (plop: NodePlopAPI) => {
         return [];
       }
 
-      const filePath = getFilePath(answers.destination);
       const currentDir = process.cwd();
+      const filePath = getFilePath(answers.destination);
       const language = tsUtils.isUsingTypeScriptSync(currentDir) ? 'ts' : 'js';
 
       return [

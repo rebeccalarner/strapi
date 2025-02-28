@@ -1,6 +1,8 @@
 import { useField } from '@strapi/admin/strapi-admin';
-import { Box, Flex, Grid } from '@strapi/design-system';
+import { Box, Flex } from '@strapi/design-system';
+import { useIntl } from 'react-intl';
 
+import { ResponsiveGridItem, ResponsiveGridRoot } from '../../FormLayout';
 import { ComponentProvider, useComponent } from '../ComponentContext';
 
 import type { ComponentInputProps } from './Input';
@@ -13,6 +15,7 @@ const NonRepeatableComponent = ({
   children,
   layout,
 }: NonRepeatableComponentProps) => {
+  const { formatMessage } = useIntl();
   const { value } = useField(name);
   const level = useComponent('NonRepeatableComponent', (state) => state.level);
   const isNested = level > 0;
@@ -31,7 +34,7 @@ const NonRepeatableComponent = ({
         <Flex direction="column" alignItems="stretch" gap={6}>
           {layout.map((row, index) => {
             return (
-              <Grid.Root gap={4} key={index}>
+              <ResponsiveGridRoot gap={4} key={index}>
                 {row.map(({ size, ...field }) => {
                   /**
                    * Layouts are built from schemas so they don't understand the complete
@@ -41,8 +44,13 @@ const NonRepeatableComponent = ({
                    */
                   const completeFieldName = `${name}.${field.name}`;
 
+                  const translatedLabel = formatMessage({
+                    id: `content-manager.components.${attribute.component}.${field.name}`,
+                    defaultMessage: field.label,
+                  });
+
                   return (
-                    <Grid.Item
+                    <ResponsiveGridItem
                       col={size}
                       key={completeFieldName}
                       s={12}
@@ -50,11 +58,11 @@ const NonRepeatableComponent = ({
                       direction="column"
                       alignItems="stretch"
                     >
-                      {children({ ...field, name: completeFieldName })}
-                    </Grid.Item>
+                      {children({ ...field, label: translatedLabel, name: completeFieldName })}
+                    </ResponsiveGridItem>
                   );
                 })}
-              </Grid.Root>
+              </ResponsiveGridRoot>
             );
           })}
         </Flex>

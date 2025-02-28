@@ -19,8 +19,34 @@ test.describe('List View', () => {
     await expect(page.getByRole('link', { name: /Create new entry/ }).first()).toBeVisible();
   });
 
-  // Should be enabled once bulk publish is in action
-  test.fixme('A user should be able to perform bulk actions on entries', async ({ page }) => {
+  test('Entries should be paginated', async ({ page }) => {
+    // Go to the authors list view, all three entries should be visible
+    await page.getByRole('link', { name: 'Content Manager' }).click();
+    await page.getByRole('link', { name: 'Author' }).click();
+    await expect(page.getByRole('gridcell', { name: 'Draft' })).toHaveCount(3);
+    await expect(page.getByRole('link', { name: 'Next page' })).not.toBeVisible();
+
+    // Lower the page size to 2 to force pagination since there are 3 entries
+    const currentUrl = page.url();
+    const newUrl = new URL(currentUrl);
+    newUrl.searchParams.set('pageSize', '2');
+    await page.goto(newUrl.toString());
+
+    // Check that that the first page has the right content
+    await expect(page.getByRole('gridcell', { name: 'Draft' })).toHaveCount(2);
+    await expect(page.getByRole('gridcell', { name: 'Coach Beard' })).toBeVisible();
+    await expect(page.getByRole('gridcell', { name: 'Ted Lasso' })).not.toBeVisible();
+    await expect(page.getByRole('link', { name: 'Previous page' })).toBeDisabled();
+    await page.getByRole('link', { name: 'Next page' }).click();
+
+    // Check that the second page has the right content
+    await expect(page.getByRole('gridcell', { name: 'Draft' })).toHaveCount(1);
+    await expect(page.getByRole('gridcell', { name: 'Ted Lasso' })).toBeVisible();
+    await expect(page.getByRole('gridcell', { name: 'Coach Beard' })).not.toBeVisible();
+    await expect(page.getByRole('link', { name: 'Next page' })).toBeDisabled();
+  });
+
+  test('A user should be able to perform bulk actions on entries', async ({ page }) => {
     await test.step('bulk publish', async () => {
       await page.getByRole('link', { name: 'Content Manager' }).click();
       // Select all entries to publish
@@ -32,10 +58,28 @@ test.describe('List View', () => {
       const publishButton = page.getByRole('button', { name: 'Publish' }).first();
       await publishButton.click();
 
-      // Wait for the selected entries modal to appear
-      await page.waitForSelector(
-        'text=0 entries already published. 2 entries ready to publish. 0 entries waiting for action'
-      );
+      await page.waitForSelector('text=Ready to publish');
+
+      await expect(
+        page.getByRole('gridcell', {
+          name: 'Already published 0',
+        })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('gridcell', {
+          name: 'Ready to publish 2',
+        })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('gridcell', {
+          name: 'Waiting for action 0',
+        })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('gridcell', {
+          name: 'Ready to publish changes 0',
+        })
+      ).toBeVisible();
 
       const entry1 = page
         .getByLabel('Publish entries')
@@ -54,9 +98,26 @@ test.describe('List View', () => {
         .getByRole('checkbox', { name: 'Select all entries' });
       await selectAll.uncheck();
 
-      await page.waitForSelector(
-        'text=0 entries already published. 0 entries ready to publish. 0 entries waiting for action'
-      );
+      await expect(
+        page.getByRole('gridcell', {
+          name: 'Already published 0',
+        })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('gridcell', {
+          name: 'Ready to publish 0',
+        })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('gridcell', {
+          name: 'Waiting for action 0',
+        })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('gridcell', {
+          name: 'Ready to publish changes 0',
+        })
+      ).toBeVisible();
 
       // Check if the publish button is disabled
       const publishModalButton = page

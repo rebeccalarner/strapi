@@ -9,7 +9,6 @@ import {
   Accordion,
   IconButton,
   useComposedRefs,
-  Grid,
   BoxComponent,
 } from '@strapi/design-system';
 import { Plus, Drag, Trash } from '@strapi/icons';
@@ -26,6 +25,7 @@ import { getIn } from '../../../../../utils/objects';
 import { getTranslation } from '../../../../../utils/translations';
 import { transformDocument } from '../../../utils/data';
 import { createDefaultForm } from '../../../utils/forms';
+import { ResponsiveGridItem, ResponsiveGridRoot } from '../../FormLayout';
 import { ComponentProvider, useComponent } from '../ComponentContext';
 
 import { Initializer } from './Initializer';
@@ -273,7 +273,7 @@ const RepeatableComponent = ({
               >
                 {layout.map((row, index) => {
                   return (
-                    <Grid.Root gap={4} key={index}>
+                    <ResponsiveGridRoot gap={4} key={index}>
                       {row.map(({ size, ...field }) => {
                         /**
                          * Layouts are built from schemas so they don't understand the complete
@@ -283,8 +283,13 @@ const RepeatableComponent = ({
                          */
                         const completeFieldName = `${nameWithIndex}.${field.name}`;
 
+                        const translatedLabel = formatMessage({
+                          id: `content-manager.components.${attribute.component}.${field.name}`,
+                          defaultMessage: field.label,
+                        });
+
                         return (
-                          <Grid.Item
+                          <ResponsiveGridItem
                             col={size}
                             key={completeFieldName}
                             s={12}
@@ -292,11 +297,15 @@ const RepeatableComponent = ({
                             direction="column"
                             alignItems="stretch"
                           >
-                            {children({ ...field, name: completeFieldName })}
-                          </Grid.Item>
+                            {children({
+                              ...field,
+                              label: translatedLabel,
+                              name: completeFieldName,
+                            })}
+                          </ResponsiveGridItem>
                         );
                       })}
-                    </Grid.Root>
+                    </ResponsiveGridRoot>
                   );
                 })}
               </Component>

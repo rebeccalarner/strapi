@@ -1,11 +1,10 @@
-import { useRBAC } from '@strapi/admin/strapi-admin';
+import { useRBAC, type AllowedActions } from '@strapi/admin/strapi-admin';
 
-// TODO: replace this import with the import from constants file when it will be migrated to TS
-import { PERMISSIONS } from '../newConstants';
+import { PERMISSIONS } from '../constants';
 
-const { main, ...restPermissions } = PERMISSIONS;
+const { main: _main, ...restPermissions } = PERMISSIONS;
 
-export const useMediaLibraryPermissions = () => {
+export const useMediaLibraryPermissions = (): AllowedActions & { isLoading: boolean } => {
   const { allowedActions, isLoading } = useRBAC(restPermissions);
 
   return { ...allowedActions, isLoading };

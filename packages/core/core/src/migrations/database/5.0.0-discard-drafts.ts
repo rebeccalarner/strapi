@@ -113,13 +113,22 @@ export async function* getBatchToDiscard({
   db,
   trx,
   uid,
-  batchSize = 1000,
+  defaultBatchSize = 1000,
 }: {
   db: Database;
   trx: Knex;
   uid: string;
-  batchSize?: number;
+  defaultBatchSize?: number;
 }) {
+  const client = db.config.connection.client;
+  const isSQLite =
+    typeof client === 'string' && ['sqlite', 'sqlite3', 'better-sqlite3'].includes(client);
+
+  // The SQLite documentation states that the maximum number of terms in a
+  // compound SELECT statement is 500 by default.
+  // See: https://www.sqlite.org/limits.html
+  // To ensure a successful migration, we limit the batch size to 500 for SQLite.
+  const batchSize = isSQLite ? Math.min(defaultBatchSize, 500) : defaultBatchSize;
   let offset = 0;
   let hasMore = true;
 
@@ -194,7 +203,9 @@ const migrateUp = async (trx: Knex, db: Database) => {
       });
 
     for await (const batch of getBatchToDiscard({ db, trx, uid: model.uid })) {
-      await async.map(batch, discardDraft, { concurrency: 10 });
+      // NOTE: concurrency had to be disabled to prevent a race condition with self-references
+      // TODO: improve performance in a safe way
+      await async.map(batch, discardDraft, { concurrency: 1 });
     }
   }
 };

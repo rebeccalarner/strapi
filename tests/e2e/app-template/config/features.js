@@ -1,5 +1,6 @@
 module.exports = ({ env }) => ({
   future: {
-    contentReleasesScheduling: env.bool('STRAPI_FEATURES_FUTURE_RELEASES_SCHEDULING', false),
+    unstablePreviewSideEditor: env.bool('STRAPI_FEATURES_UNSTABLE_PREVIEW_SIDE_EDITOR', false),
+    unstableRelationsOnTheFly: env.bool('STRAPI_FEATURES_UNSTABLE_RELATIONS_ON_THE_FLY', false),
   },
 });
